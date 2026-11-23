@@ -38,11 +38,24 @@ if (bytes.length > 1048576) {
   console.error(`entry.png is ${bytes.length} bytes, over the 1 MiB cap`);
   process.exit(1);
 }
+if (isPng) {
+  const width = bytes.readUInt32BE(16);
+  const height = bytes.readUInt32BE(20);
+  if (width > 1024 || height > 1024) {
+    console.error(`entry.png is ${width}x${height}, over the 1024x1024 cap`);
+    process.exit(1);
+  }
+}
 
 mkdirSync(OUTPUT_DIR, { recursive: true });
 try {
   copyFileSync(entryPath, join(OUTPUT_DIR, 'entry.png'));
 } catch (err) {
   console.error(`entry.png could not be copied from ${BOT_DIR}: ${(err as Error).message}`);
+  process.exit(1);
+}
+const copied = readFileSync(join(OUTPUT_DIR, 'entry.png'));
+if (copied.length !== bytes.length || !copied.equals(bytes)) {
+  console.error('entry.png copy does not match the source');
   process.exit(1);
 }
